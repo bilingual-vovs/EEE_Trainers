@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f6f1">
+  <title>Resistor Codes — Four-band practice</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --accent: #d06224;
+      --heading: #ae431e;
+      --schematic: #8a8635;
+      --surface: #e9c891;
+      --paper: #f8f6f1;
+      --card: #fffefa;
+      --ink: #28261f;
+      --muted: #77736a;
+      --line: #e5e0d5;
+      --good: #63804a;
+      --bad: #b64d35;
+      --shadow: 0 16px 48px rgba(65, 54, 36, .07);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid rgba(208, 98, 36, .28);
+      outline-offset: 2px;
+    }
+    .shell { width: min(1060px, calc(100% - 40px)); margin: 0 auto; }
+    header {
+      height: 82px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; color: var(--heading); font-weight: 750; letter-spacing: -.03em; }
+    .brand-mark { width: 34px; height: 34px; border: 1px solid #e7c9a8; border-radius: 11px; display: grid; place-items: center; background: #fffaf2; }
+    .brand-mark svg { width: 20px; height: 20px; }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+    .estimate-chip { text-align: right; color: var(--muted); font-size: 11px; line-height: 1.35; max-width: 190px; }
+    .estimate-chip strong { display: block; color: var(--heading); font-size: 12px; }
+    .quiet-button, .icon-button {
+      border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px;
+      padding: 9px 13px; font-size: 13px; font-weight: 650; transition: .18s ease;
+    }
+    .quiet-button:hover, .icon-button:hover { border-color: #d4a57b; color: var(--heading); }
+    main { padding: 52px 0 72px; min-height: calc(100vh - 140px); }
+    .eyebrow { color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { color: var(--heading); font-size: clamp(30px, 5vw, 46px); line-height: 1.12; letter-spacing: -.055em; margin: 9px 0 12px; }
+    h2 { color: var(--heading); letter-spacing: -.035em; line-height: 1.2; }
+    .intro { max-width: 590px; color: var(--muted); font-size: 16px; margin-bottom: 32px; }
+    .setup-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 18px; align-items: stretch; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 17px; box-shadow: var(--shadow); }
+    .setup-card { padding: 26px; }
+    .card-title { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 23px; }
+    .card-title h2 { font-size: 18px; margin: 0; }
+    .card-title span { color: var(--muted); font-size: 12px; }
+    .field { margin: 0 0 23px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 9px; }
+    .field label, .field-label { font-weight: 700; font-size: 13px; }
+    .field-note { color: var(--muted); font-size: 12px; }
+    .input-wrap { display: flex; gap: 9px; align-items: center; }
+    .input-wrap input, .select-wrap select, .answer-input {
+      border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink);
+    }
+    .input-wrap input { width: auto; min-width: 64px; max-width: 100%; padding: 10px 12px; }
+    input[type=number] { appearance: textfield; -moz-appearance: textfield; }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .input-suffix { color: var(--muted); font-size: 12px; }
+    input[type=range] { width: 100%; accent-color: var(--accent); margin: 6px 0 0; cursor: pointer; }
+    .range-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .slider-row { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(120px, auto); gap: 14px; align-items: center; }
+    .slider-row .input-wrap input { width: 100%; }
+    .select-wrap select { padding: 11px 36px 11px 12px; width: 100%; }
+    .mode-options { display: grid; gap: 9px; }
+    .mode-option {
+      border: 1px solid var(--line); border-radius: 12px; padding: 12px 13px; display: flex; gap: 11px; align-items: center; cursor: pointer; transition: .18s ease;
+    }
+    .mode-option:has(input:checked) { border-color: var(--accent); background: #fff8f1; box-shadow: inset 0 0 0 1px var(--accent); }
+    .mode-option input { accent-color: var(--accent); }
+    .mode-copy strong { display: block; font-size: 13px; }
+    .mode-copy small { color: var(--muted); font-size: 11px; }
+    .start-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 25px; }
+    .start-row small { color: var(--muted); font-size: 11px; }
+    .primary-button {
+      border: 0; border-radius: 10px; background: var(--accent); color: white; padding: 12px 20px;
+      font-weight: 750; box-shadow: 0 5px 13px rgba(208, 98, 36, .18); transition: .18s ease;
+    }
+    .primary-button:hover { background: var(--heading); transform: translateY(-1px); }
+    .primary-button:disabled { cursor: not-allowed; opacity: .55; transform: none; }
+    .secondary-button { background: white; color: var(--heading); border: 1px solid #e6c7ad; box-shadow: none; }
+    .secondary-button:hover { background: #fff8f1; }
+    .info-card { padding: 26px; background: linear-gradient(145deg, #fffefa, #fbf2e2); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative; }
+    .info-card::after { content: ""; position: absolute; width: 190px; height: 190px; border: 1px solid rgba(138,134,53,.19); border-radius: 50%; right: -84px; bottom: -94px; box-shadow: 0 0 0 20px rgba(138,134,53,.04),0 0 0 42px rgba(138,134,53,.035); }
+    .info-card h2 { font-size: 20px; max-width: 230px; margin: 8px 0; }
+    .info-card p { color: var(--muted); font-size: 13px; max-width: 260px; }
+    .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+    .legend-item { display: flex; align-items: center; gap: 7px; color: #615e56; font-size: 11px; }
+    .legend-swatch { width: 9px; height: 9px; border-radius: 50%; }
+    .stage-top { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin-bottom: 24px; }
+    .stage-title h1 { font-size: clamp(26px, 4vw, 36px); margin: 6px 0 0; }
+    .progress-box { min-width: 150px; text-align: right; }
+    .progress-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .progress-track { width: 150px; max-width: 100%; height: 6px; border-radius: 9px; background: #eae5dc; overflow: hidden; margin-left: auto; }
+    .progress-fill { height: 100%; background: var(--accent); border-radius: inherit; transition: width .25s ease; }
+    .exercise-card { padding: clamp(20px, 4vw, 38px); }
+    .exercise-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .exercise-head h2 { font-size: 20px; margin: 4px 0 0; }
+    .timer { color: var(--heading); background: #fff2e6; border-radius: 10px; padding: 8px 11px; font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 750; white-space: nowrap; }
+    .timer.warning { background: #fbe9e2; color: var(--bad); }
+    .prompt-value { color: var(--heading); font-size: clamp(30px, 6vw, 50px); font-weight: 800; line-height: 1.1; letter-spacing: -.05em; text-align: center; margin: 30px auto 4px; }
+    .prompt-tolerance { text-align: center; color: var(--muted); font-size: 15px; margin-bottom: 26px; }
+    .resistor-scene { width: min(540px, 100%); margin: 19px auto 25px; position: relative; }
+    .resistor-svg { width: 100%; height: auto; overflow: visible; display: block; }
+    .band-hit { cursor: pointer; }
+    .band-hit:focus { outline: none; }
+    .band-hit:focus .band-focus { stroke: var(--accent); stroke-width: 3; }
+    .band-hit:hover .band-focus { stroke: rgba(208,98,36,.65); stroke-width: 2; }
+    .resistor-caption { color: var(--muted); text-align: center; font-size: 12px; margin: -7px 0 22px; }
+    .answer-row { width: min(480px, 100%); margin: 0 auto; display: grid; grid-template-columns: 1fr 130px; gap: 11px; }
+    .answer-field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .answer-input { width: 100%; padding: 12px 13px; font-size: 16px; }
+    .unit-hint { font-size: 11px; color: var(--muted); margin: 7px 0 0; }
+    .submit-row { display: flex; justify-content: center; margin-top: 20px; }
+    .submit-row .primary-button { min-width: 170px; }
+    .feedback { display: none; width: min(480px, 100%); margin: 18px auto 0; padding: 12px 14px; border-radius: 10px; font-size: 13px; }
+    .feedback.show { display: block; }
+    .feedback.correct { background: #f0f4ea; border: 1px solid #dce5d0; color: #536c3a; }
+    .feedback.incorrect { background: #fbefeb; border: 1px solid #f0d9d1; color: #994330; }
+    .feedback strong { display: block; margin-bottom: 2px; }
+    .feedback-colors { display: flex; align-items: center; gap: 9px; margin-top: 10px; }
+    .feedback-color { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--muted); font-size: 9px; }
+    .feedback-color-dot { width: 23px; height: 23px; border-radius: 50%; border: 1px solid rgba(40,38,31,.16); }
+    .answer-input.invalid { border-color: var(--bad); background: #fff7f4; box-shadow: 0 0 0 2px rgba(182,77,53,.12); }
+    .band-missing .band-focus { stroke: var(--bad); stroke-width: 4; }
+    .graph-card { margin-top: 18px; padding: 18px 22px 14px; }
+    .graph-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .graph-heading strong { color: var(--heading); font-size: 13px; }
+    .graph-heading span { color: var(--muted); font-size: 11px; }
+    .live-graph { width: 100%; height: 120px; display: block; }
+    .graph-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 28px 0 14px; }
+    .results-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; margin-bottom: 24px; }
+    .results-header h1 { font-size: clamp(29px, 5vw, 42px); }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+    .stat-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 17px; }
+    .stat-card span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 8px; }
+    .stat-card strong { color: var(--heading); font-size: clamp(20px, 3vw, 29px); letter-spacing: -.04em; }
+    .results-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 17px; }
+    .chart-card, .task-list-card { padding: 23px; }
+    .chart-card h2, .task-list-card h2 { font-size: 17px; margin-bottom: 15px; }
+    .distribution { min-height: 190px; display: flex; align-items: flex-end; justify-content: center; gap: 8px; padding: 20px 4px 25px; border-bottom: 1px solid var(--line); }
+    .dist-column { min-width: 25px; width: 10%; display: flex; flex-direction: column; align-items: center; justify-content: end; height: 155px; }
+    .dist-bar { width: min(28px, 85%); min-height: 3px; border-radius: 5px 5px 0 0; background: var(--surface); position: relative; }
+    .dist-bar::before { content: attr(data-count); position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--muted); }
+    .dist-label { position: absolute; bottom: -23px; color: var(--muted); font-size: 9px; white-space: nowrap; }
+    .chart-legend { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 11px; margin-top: 12px; }
+    .list-tools { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin: -3px 0 13px; }
+    .toggle-label { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 7px; }
+    .toggle-label input { accent-color: var(--accent); }
+    .task-list { max-height: 370px; overflow: auto; }
+    .task-row { display: grid; grid-template-columns: 29px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #f0ede7; font-size: 12px; }
+    .task-index { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .task-main strong { display: block; color: var(--ink); font-size: 12px; font-weight: 700; }
+    .task-main span { color: var(--muted); font-size: 11px; }
+    .task-result { font-weight: 750; font-size: 11px; }
+    .task-result.good { color: var(--good); }
+    .task-result.bad { color: var(--bad); }
+    .result-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
+    .history-overlay { position: fixed; inset: 0; background: rgba(31, 29, 24, .28); display: none; z-index: 20; padding: 18px; align-items: center; justify-content: center; }
+    .history-overlay.open { display: flex; }
+    .history-modal { width: min(580px, 100%); max-height: min(720px, 90vh); overflow: auto; padding: 25px; }
+    .history-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 19px; }
+    .history-head h2 { margin: 0; font-size: 21px; }
+    .history-total { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; margin-bottom: 17px; }
+    .history-total div { background: #fbf7ef; border-radius: 10px; padding: 11px; }
+    .history-total span { display: block; color: var(--muted); font-size: 10px; }
+    .history-total strong { color: var(--heading); font-size: 18px; }
+    .history-entry { padding: 13px 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+    .history-entry strong { font-size: 13px; display: block; }
+    .history-entry small { color: var(--muted); font-size: 11px; }
+    .history-empty { text-align: center; color: var(--muted); padding: 28px 10px; font-size: 13px; }
+    .radial-menu { position: fixed; z-index: 15; display: none; width: 230px; height: 230px; border: 1px solid #ded7cb; border-radius: 50%; background: rgba(255,254,250,.98); box-shadow: 0 14px 40px rgba(36,30,20,.2); transform: translate(-50%, -50%); }
+    .radial-menu.open { display: block; }
+    .radial-menu::before { content: ""; position: absolute; inset: 34px; border-radius: 50%; border: 1px dashed #e8e1d6; pointer-events: none; }
+    .radial-center { position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line); background: white; color: var(--muted); font-size: 10px; font-weight: 700; }
+    .color-choice { position: absolute; width: 30px; height: 30px; padding: 0; border: 2px solid rgba(255,255,255,.95); border-radius: 50%; box-shadow: 0 1px 5px rgba(0,0,0,.2); }
+    .color-choice:hover, .color-choice:focus-visible { transform: scale(1.22); z-index: 3; }
+    .color-choice span { position: absolute; left: 50%; top: 34px; transform: translateX(-50%); font-size: 9px; white-space: nowrap; color: var(--ink); text-shadow: 0 1px 3px white; }
+    .toast { position: fixed; z-index: 30; bottom: 18px; left: 50%; transform: translate(-50%, 20px); opacity: 0; background: #302e28; color: white; border-radius: 9px; padding: 10px 14px; font-size: 12px; transition: .2s ease; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .hidden { display: none !important; }
+    footer { color: var(--muted); font-size: 11px; text-align: center; padding: 0 0 25px; }
+    @media (max-width: 760px) {
+      main { padding-top: 35px; }
+      .setup-grid, .results-grid { grid-template-columns: 1fr; }
+      .info-card { min-height: 250px; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 500px) {
+      .shell { width: min(100% - 26px, 1060px); }
+      header { height: 68px; }
+      .brand { font-size: 14px; }
+      .brand-mark { width: 30px; height: 30px; }
+      .quiet-button { padding: 8px 10px; font-size: 12px; }
+      .estimate-chip { max-width: 115px; font-size: 10px; }
+      .estimate-chip strong { font-size: 11px; }
+      main { padding-top: 28px; }
+      .setup-card, .info-card { padding: 20px; }
+      .stage-top { align-items: flex-start; }
+      .progress-box { min-width: 94px; }
+      .progress-track { width: 94px; }
+      .answer-row { grid-template-columns: 1fr 104px; }
+      .results-header { flex-direction: column; }
+      .distribution { gap: 2px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <a class="brand" href="#setup" id="homeLink" aria-label="Four-band trainer home" style="text-decoration:none">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M2 12h4m12 0h4M6 12l2-4 3 8 3-8 2 4h2" stroke="#8A8635" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 9.3v5.4m3-5.4v5.4" stroke="#D06224" stroke-width="2"/></svg>
+        </span>
+        <span>Four-band trainer</span>
+      </a>
+      <div class="header-actions">
+        <button class="quiet-button" id="historyButton" type="button">Round history</button>
+      </div>
+    </header>
+    <main id="app" aria-live="polite"></main>
+    <footer>Four-band resistor practice · Progress is saved on this device</footer>
+  </div>
+
+  <div class="history-overlay" id="historyOverlay" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+    <div class="history-modal card">
+      <div class="history-head"><h2 id="historyTitle">Your practice history</h2><button class="icon-button" id="closeHistory" type="button" aria-label="Close history">Close</button></div>
+      <div id="historyContent"></div>
+    </div>
+  </div>
+  <div class="radial-menu" id="radialMenu" role="menu" aria-label="Choose resistor band color">
+    <button class="radial-center" id="radialClose" type="button">Cancel</button>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const COLORS = [
+        { name: "Black", value: 0, hex: "#252522", text: "#fff" },
+        { name: "Brown", value: 1, hex: "#795038", text: "#fff" },
+        { name: "Red", value: 2, hex: "#c44738", text: "#fff" },
+        { name: "Orange", value: 3, hex: "#e87927", text: "#28261f" },
+        { name: "Yellow", value: 4, hex: "#f2c84b", text: "#28261f" },
+        { name: "Green", value: 5, hex: "#64814a", text: "#fff" },
+        { name: "Blue", value: 6, hex: "#477ba0", text: "#fff" },
+        { name: "Violet", value: 7, hex: "#82649b", text: "#fff" },
+        { name: "Grey", value: 8, hex: "#92918e", text: "#28261f" },
+        { name: "White", value: 9, hex: "#f7f4ed", text: "#28261f" },
+        { name: "Gold", value: -1, hex: "#c49b45", text: "#28261f" },
+        { name: "Silver", value: -2, hex: "#b9bdc1", text: "#28261f" }
+      ];
+      const TOLERANCES = [
+        { value: 1, name: "Brown", hex: "#795038" },
+        { value: 2, name: "Red", hex: "#c44738" },
+        { value: 0.5, name: "Green", hex: "#64814a" },
+        { value: 0.25, name: "Blue", hex: "#477ba0" },
+        { value: 0.1, name: "Violet", hex: "#82649b" },
+        { value: 0.05, name: "Grey", hex: "#92918e" },
+        { value: 5, name: "Gold", hex: "#c49b45" },
+        { value: 10, name: "Silver", hex: "#b9bdc1" }
+      ];
+      const E_SERIES = { E3: 3, E6: 6, E12: 12, E24: 24, E48: 48, E96: 96, E192: 192 };
+      const STANDARD_E_VALUES = {
+        E3: [1, 2.2, 4.7],
+        E6: [1, 1.5, 2.2, 3.3, 4.7, 6.8],
+        E12: [1, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2],
+        E24: [1, 1.1, 1.2, 1.3, 1.5, 1.6, 1.8, 2, 2.2, 2.4, 2.7, 3, 3.3, 3.6, 3.9, 4.3, 4.7, 5.1, 5.6, 6.2, 6.8, 7.5, 8.2, 9.1]
+      };
+      const STORAGE_KEY = "fourBandTrainer.v1";
+      const app = document.getElementById("app");
+      const radialMenu = document.getElementById("radialMenu");
+      const historyOverlay = document.getElementById("historyOverlay");
+      let saved = loadSaved();
+      let state = { screen: "setup", settings: null, tasks: [], index: 0, startedAt: 0, timerId: null, remaining: 0, onlyErrors: false, correction: false };
+      let toastTimer;
+
+      function loadSaved() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+          const rounds = Array.isArray(parsed.rounds) ? parsed.rounds : [];
+          rounds.forEach(round => (round.tasks || []).forEach(task => {
+            if (Array.isArray(task.colors) && typeof task.colors[3] === "string") {
+              task.colors[3] = TOLERANCES.find(item => item.name === task.colors[3])?.value ?? task.tolerance;
+            }
+          }));
+          return { rounds };
+        } catch (error) {
+          console.warn("Could not read saved practice history.", error);
+          return { rounds: [] };
+        }
+      }
+      function persist() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); }
+        catch (error) { console.warn("Could not save practice history.", error); showToast("History could not be saved on this device."); }
+      }
+      function esc(value) {
+        return String(value).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
+      }
+      function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+      function logPosition(value, min, max) { return (Math.log(value) - Math.log(min)) / (Math.log(max) - Math.log(min)) * 1000; }
+      function fromLogPosition(position, min, max) { return min * Math.pow(max / min, Number(position) / 1000); }
+      function compactNumber(value) {
+        if (!Number.isFinite(value)) return "∞";
+        return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+      }
+      function formatOhms(value) {
+        if (value >= 1e9) return `${trim(value / 1e9)} GΩ`;
+        if (value >= 1e6) return `${trim(value / 1e6)} MΩ`;
+        if (value >= 1e3) return `${trim(value / 1e3)} kΩ`;
+        if (value < 1 && value >= 1e-3) return `${trim(value * 1e3)} mΩ`;
+        if (value < 1e-3) return `${trim(value * 1e6)} µΩ`;
+        return `${trim(value)} Ω`;
+      }
+      function trim(n) { return Number(n.toPrecision(4)).toString(); }
+      function prettyTolerance(value) { return Number.isInteger(value) ? String(value) : String(value); }
+      function modeLabel(mode) { return ({ value: "Value by code", code: "Code by value", mixed: "Mixed practice" })[mode] || "Practice"; }
+      function colorByValue(value) { return COLORS.find(color => color.value === value); }
+      function toleranceByValue(value) { return TOLERANCES.find(item => item.value === value); }
+      function seriesDigits(series) {
+        if (series === "none") return Array.from({ length: 90 }, (_, index) => index + 10);
+        const count = E_SERIES[series];
+        const standardValues = STANDARD_E_VALUES[series] || Array.from({ length: count }, (_, index) => Number(Math.pow(10, index / count).toPrecision(3)));
+        return [...new Set(standardValues.map(value => Math.round(value * 10)))];
+      }
+      function estimatedSecondsPerQuestion(limit, mode, series) {
+        const history = saved.rounds.flatMap(round => (round.tasks || [])
+          .filter(task => Number.isFinite(task.elapsed) && task.elapsed > 0 && !task.timedOut
+            && (round.series === series || series === "none")
+            && (mode === "mixed" || task.type === mode))
+          .map(task => task.elapsed));
+        const historicalAverage = history.length ? history.reduce((sum, value) => sum + value, 0) / history.length : (mode === "code" ? 18 : 15);
+        return {
+          seconds: limit > 0 ? Math.min(historicalAverage, limit) : historicalAverage,
+          fromHistory: history.length > 0
+        };
+      }
+      function updateEstimate() {
+        const estimate = document.getElementById("setupEstimate");
+        if (!estimate) return;
+        const roundsText = document.getElementById("roundsInput")?.value.trim() || "10";
+        const rolls = /^(∞|infinity)$/i.test(roundsText) ? Infinity : Number(roundsText);
+        const timeText = document.getElementById("timeInput")?.value.trim() || "0";
+        const time = Number(timeText);
+        const mode = document.querySelector('input[name="mode"]:checked')?.value || "mixed";
+        const series = document.getElementById("seriesSelect")?.value || "none";
+        const estimatePerQuestion = estimatedSecondsPerQuestion(Number.isFinite(time) ? time : 0, mode, series);
+        const secondsPerQuestion = estimatePerQuestion.seconds;
+        const estimateSource = estimatePerQuestion.fromHistory ? "Based on your practice history" : "Typical estimate until your first round";
+        estimate.classList.remove("hidden");
+        estimate.innerHTML = rolls === Infinity
+          ? `<strong>≈ ${trim(secondsPerQuestion)} sec / question</strong>${estimateSource}`
+          : `<strong>≈ ${formatDuration(secondsPerQuestion * (Number.isFinite(rolls) && rolls > 0 ? rolls : 10))} total</strong>${estimateSource}`;
+      }
+      function formatDuration(seconds) {
+        if (seconds >= 3600) return `${trim(seconds / 3600)} hr`;
+        if (seconds >= 60) return `${Math.ceil(seconds / 60)} min`;
+        return `${Math.ceil(seconds)} sec`;
+      }
+
+      function renderSetup() {
+        state.screen = "setup";
+        clearTimer();
+        app.innerHTML = `
+          <div class="eyebrow">Learn the language of resistors</div>
+          <h1>Read the bands.<br>Know the value.</h1>
+          <p class="intro">Build confidence with four-band resistor codes. Practice reading values, placing colors, or switch between both.</p>
+          <div class="setup-grid">
+            <section class="card setup-card" aria-labelledby="setupTitle">
+              <div class="card-title"><h2 id="setupTitle">Set up your practice</h2><span class="estimate-chip" id="setupEstimate" aria-live="polite"></span></div>
+              <div class="field">
+                <div class="field-head"><label for="roundsInput">Number of questions</label><span class="field-note">5 or more</span></div>
+                <div class="slider-row">
+                  <div><input id="roundsRange" type="range" min="0" max="1000" step="1" value="${logPosition(10, 5, 1000000) * .999}" aria-label="Number of questions, logarithmic slider"><div class="range-ends"><span>5</span><span>∞</span></div></div>
+                  <div class="input-wrap"><input id="roundsInput" type="text" inputmode="numeric" value="10" aria-label="Number of questions"><span class="input-suffix">questions</span></div>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field-head"><label for="timeInput">Time per question</label><span class="field-note">0 means no limit</span></div>
+                <div class="slider-row">
+                  <div><input id="timeRange" type="range" min="0" max="99" step="1" value="99" aria-label="Time limit, linear slider"><div class="range-ends"><span>2 sec</span><span>No time limit</span></div></div>
+                  <div class="input-wrap" id="timeInputWrap"><input id="timeInput" type="text" inputmode="numeric" value="No time limit" aria-label="Time limit in seconds"><span class="input-suffix hidden" id="timeSuffix">seconds</span></div>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field-head"><label for="seriesSelect">Preferred value series</label><span class="field-note">Four-band values</span></div>
+                <div class="select-wrap"><select id="seriesSelect" aria-label="Preferred E series"><option value="none">No set — all values</option>${Object.keys(E_SERIES).map(series => `<option value="${series}">${series}</option>`).join("")}</select></div>
+                <div class="field-note" style="margin-top:6px">Four-band values use two significant digits; E-series values are rounded to the nearest representable value.</div>
+              </div>
+              <div class="field">
+                <label class="toggle-label"><input type="checkbox" id="noToleranceToggle">No tolerance (practice the first three bands only)</label>
+              </div>
+              <div class="field">
+                <div class="field-head"><span class="field-label">Exercise type</span></div>
+                <div class="mode-options">
+                  <label class="mode-option"><input type="radio" name="mode" value="value"><span class="mode-copy"><strong>Value by code</strong><small>Read the colors and enter the resistance</small></span></label>
+                  <label class="mode-option"><input type="radio" name="mode" value="code"><span class="mode-copy"><strong>Code by value</strong><small>Choose the right color for each band</small></span></label>
+                  <label class="mode-option"><input type="radio" name="mode" value="mixed" checked><span class="mode-copy"><strong>Mixed</strong><small>Switch modes in clusters of at least two</small></span></label>
+                </div>
+              </div>
+              <div class="start-row"><small>Keyboard friendly · Press Enter to check</small><button class="primary-button" id="startButton" type="button">Start practice <span aria-hidden="true">→</span></button></div>
+            </section>
+            <aside class="card info-card">
+              <div><div class="eyebrow">Quick reference</div><h2>Two digits. One multiplier. One tolerance.</h2><p>Each band adds a piece of the resistance value. Learn the color sequence as you practice.</p></div>
+              <div class="legend">
+                <div class="legend-item"><span class="legend-swatch" style="background:#252522"></span>0 · Black</div>
+                <div class="legend-item"><span class="legend-swatch" style="background:#795038"></span>1 · Brown</div>
+                <div class="legend-item"><span class="legend-swatch" style="background:#c44738"></span>2 · Red</div>
+                <div class="legend-item"><span class="legend-swatch" style="background:#e87927"></span>3 · Orange</div>
+                <div class="legend-item"><span class="legend-swatch" style="background:#f2c84b"></span>4 · Yellow</div>
+                <div class="legend-item"><span class="legend-swatch" style="background:#64814a"></span>5 · Green</div>
+                <div class="legend-item"><span class="legend-swatch" style="background:#477ba0"></span>6 · Blue</div>
+                <div class="legend-item"><span class="legend-swatch" style="background:#82649b"></span>7 · Violet</div>
+              </div>
+            </aside>
+          </div>`;
+        const roundsRange = document.getElementById("roundsRange");
+        const roundsInput = document.getElementById("roundsInput");
+        roundsRange.addEventListener("input", () => {
+          roundsInput.value = roundsRange.value === "1000" ? "∞" : Math.round(fromLogPosition(Number(roundsRange.value) / .999, 5, 1000000));
+          resizeInput(roundsInput);
+          updateEstimate();
+        });
+        roundsInput.addEventListener("input", () => {
+          const raw = roundsInput.value.trim();
+          if (/^(∞|infinity)$/i.test(raw)) {
+            roundsRange.value = "1000";
+            resizeInput(roundsInput);
+            updateEstimate();
+            return;
+          }
+          const n = Number(raw);
+          if (n >= 5 && Number.isSafeInteger(n)) roundsRange.value = String(Math.min(999, Math.round(logPosition(clamp(n, 5, 1000000), 5, 1000000) * .999)));
+          resizeInput(roundsInput);
+          updateEstimate();
+        });
+        const timeRange = document.getElementById("timeRange");
+        const timeInput = document.getElementById("timeInput");
+        timeRange.addEventListener("input", () => {
+          const unlimited = timeRange.value === "99";
+          timeInput.value = unlimited ? "No time limit" : String(Number(timeRange.value) + 2);
+          document.getElementById("timeSuffix").classList.toggle("hidden", unlimited);
+          resizeInput(timeInput);
+          updateEstimate();
+        });
+        timeInput.addEventListener("input", () => {
+          const text = timeInput.value.trim();
+          const unlimited = /^(0|no\s*time\s*limit|none)$/i.test(text);
+          const n = Number(text);
+          if (unlimited) {
+            timeRange.value = "99";
+            timeInput.value = "No time limit";
+            document.getElementById("timeSuffix").classList.add("hidden");
+          } else if (Number.isInteger(n) && n >= 2 && n <= 100) {
+            timeRange.value = String(n - 2);
+            document.getElementById("timeSuffix").classList.remove("hidden");
+          } else {
+            document.getElementById("timeSuffix").classList.remove("hidden");
+          }
+          resizeInput(timeInput);
+          updateEstimate();
+        });
+        document.getElementById("seriesSelect").addEventListener("change", updateEstimate);
+        document.querySelectorAll('input[name="mode"]').forEach(radio => radio.addEventListener("change", updateEstimate));
+        document.getElementById("startButton").addEventListener("click", startFromSetup);
+        document.getElementById("roundsInput").addEventListener("keydown", e => { if (e.key === "Enter") startFromSetup(); });
+        document.getElementById("timeInput").addEventListener("keydown", e => { if (e.key === "Enter") startFromSetup(); });
+        resizeInput(roundsInput);
+        resizeInput(timeInput);
+        updateEstimate();
+      }
+      function resizeInput(input) {
+        input.style.width = `${Math.max(8, String(input.value || input.placeholder || "").length + 4)}ch`;
+      }
+
+      function startFromSetup() {
+        const roundsText = document.getElementById("roundsInput").value.trim();
+        const rolls = /^(∞|infinity)$/i.test(roundsText) ? Infinity : Number(roundsText);
+        const timeText = document.getElementById("timeInput").value.trim();
+        const time = /^(no\s*time\s*limit|none)$/i.test(timeText) ? 0 : Number(timeText);
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const series = document.getElementById("seriesSelect").value;
+        const noTolerance = document.getElementById("noToleranceToggle").checked;
+        if (rolls !== Infinity && (!Number.isSafeInteger(rolls) || rolls < 5)) { showToast("Choose at least 5 questions, or enter ∞ for continuous practice."); document.getElementById("roundsInput").focus(); return; }
+        if (timeText === "" || !Number.isFinite(time) || time < 0 || (time > 0 && (!Number.isInteger(time) || time < 2 || time > 100))) { showToast("Time limit must be 0 (none) or a whole number from 2 to 100 seconds."); document.getElementById("timeInput").focus(); return; }
+        state.settings = { rolls, time, mode, series, noTolerance };
+        state.correction = false;
+        state.onlyErrors = false;
+        state.target = rolls;
+        state.tasks = [];
+        state.valuePool = [];
+        state.mixType = null;
+        state.mixRemaining = 0;
+        state.index = 0;
+        state.screen = "practice";
+        renderPractice();
+      }
+
+      function makeQuestion(type) {
+        if (!state.valuePool.length) {
+          state.valuePool = [];
+          for (const significantDigits of seriesDigits(state.settings.series)) {
+            for (let multiplier = -2; multiplier <= 9; multiplier++) {
+              state.valuePool.push({ significantDigits, multiplier });
+            }
+          }
+          for (let i = state.valuePool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [state.valuePool[i], state.valuePool[j]] = [state.valuePool[j], state.valuePool[i]];
+          }
+        }
+        const { significantDigits, multiplier } = state.valuePool.pop();
+        const first = Math.floor(significantDigits / 10);
+        const second = significantDigits % 10;
+        const tolerance = state.settings.noTolerance ? 5 : TOLERANCES[Math.floor(Math.random() * TOLERANCES.length)].value;
+        const colors = [first, second, multiplier, tolerance];
+        return { type, digits: [first, second], multiplier, tolerance, colors, ohms: (first * 10 + second) * Math.pow(10, multiplier), answers: null, correct: false, elapsed: 0, timedOut: false };
+      }
+      function generateNextQuestion() {
+        const mode = state.settings.mode;
+        let type = mode;
+        if (mode === "mixed") {
+          if (state.mixRemaining <= 0) {
+            type = state.mixType === "value" ? "code" : state.mixType === "code" ? "value" : (Math.random() < .5 ? "value" : "code");
+            state.mixType = type;
+            const left = state.target === Infinity ? Infinity : state.target - state.tasks.length;
+            let clusterSize = Math.min(left, 2 + Math.floor(Math.random() * 3));
+            if (left - clusterSize === 1) clusterSize += clusterSize < 4 ? 1 : -1;
+            state.mixRemaining = clusterSize;
+          } else type = state.mixType;
+          state.mixRemaining--;
+        }
+        state.tasks.push(makeQuestion(type));
+      }
+
+      function resistorSvg(task, disabled) {
+        const bands = task.type === "code" ? task.answers || [null, null, null, state.settings.noTolerance ? 5 : null] : task.colors;
+        const xPositions = [204, 255, 306, 357];
+        const rects = bands.map((code, i) => {
+          let color = "#f8f3e5";
+          if (code !== null && code !== undefined) {
+            if (i === 3) color = toleranceByValue(Number(code))?.hex || "#f8f3e5";
+            else color = colorByValue(Number(code))?.hex || "#f8f3e5";
+          }
+          const stroke = ["#f8f3e5", "#f2c84b", "#b9bdc1"].includes(color) ? "#bdb4a4" : color;
+          const fixedToleranceBand = task.type === "code" && state.settings.noTolerance && i === 3;
+          return `<g class="band-hit${fixedToleranceBand ? " band-fixed" : ""}" data-band="${i}" ${task.type === "code" && !disabled && !fixedToleranceBand ? 'tabindex="0" role="button" aria-label="Choose color for band ' + (i + 1) + '"' : ""}>
+            <rect class="band-focus" x="${xPositions[i] - 13}" y="60" width="26" height="82" rx="3" fill="${color}" stroke="${stroke}" stroke-width="1"/>
+            ${task.type === "code" && !disabled && !fixedToleranceBand ? `<title>Click to choose band ${i + 1}</title>` : ""}
+          </g>`;
+        }).join("");
+        return `<svg class="resistor-svg" viewBox="0 0 560 202" role="img" aria-label="${task.type === "value" ? "Resistor with four color bands" : "Select each of the four resistor color bands"}">
+          <defs><linearGradient id="bodyShade" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f5e5bf"/><stop offset=".48" stop-color="#e9d19e"/><stop offset="1" stop-color="#d8ba83"/></linearGradient></defs>
+          <path d="M20 101H164M396 101H540" stroke="#aaa69c" stroke-width="5" stroke-linecap="round"/>
+          <path d="M160 101c0-33 16-54 39-54h162c23 0 39 21 39 54s-16 54-39 54H199c-23 0-39-21-39-54Z" fill="url(#bodyShade)" stroke="#c9b58e" stroke-width="1.5"/>
+          <path d="M172 75c8-17 16-22 27-23h162c12 1 20 7 27 23" fill="none" stroke="rgba(255,255,255,.52)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M164 76c7-12 18-19 32-19h3v88h-3c-14 0-25-7-32-19m232-50c-7-12-18-19-32-19h-3v88h3c14 0 25-7 32-19" fill="#d9c395" opacity=".62"/>
+          ${rects}
+          <text x="280" y="190" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#9a917f" letter-spacing="1.5">4-BAND AXIAL RESISTOR</text>
+        </svg>`;
+      }
+
+      function renderPractice() {
+        state.screen = "practice";
+        if (state.target !== Infinity && state.index >= state.target) { finishRound(); return; }
+        if (!state.tasks[state.index]) generateNextQuestion();
+        clearTimer();
+        const task = state.tasks[state.index];
+        task.answers = task.type === "code" ? (task.answers || [null, null, null, state.settings.noTolerance ? 5 : null]) : null;
+        state.startedAt = performance.now();
+        state.remaining = state.settings.time;
+        app.innerHTML = `
+          <div class="stage-top">
+            <div class="stage-title"><div class="eyebrow">${state.correction ? "Error correction" : modeLabel(state.settings.mode)}</div><h1>Question ${state.index + 1}</h1></div>
+            <div class="progress-box"><div class="progress-label">${state.index + 1} ${state.target === Infinity ? "in continuous practice" : `of ${state.target}`}</div><div class="progress-track"><div class="progress-fill" style="width:${state.target === Infinity ? "100" : ((state.index + 1) / state.target) * 100}%"></div></div><button id="finishRoundButton" class="quiet-button" style="margin-top:8px;padding:6px 9px" type="button">End early</button></div>
+          </div>
+          <section class="card exercise-card">
+            <div class="exercise-head"><div><div class="eyebrow">${task.type === "value" ? "Decode the resistor" : "Build the color code"}</div><h2>${task.type === "value" ? "What is the resistance?" : state.settings.noTolerance ? "Select the first three colors" : "Select the four band colors"}</h2></div>
+              <div class="timer ${state.settings.time ? "" : "hidden"}" id="timer" aria-live="off"></div></div>
+            ${task.type === "code" ? `<div class="prompt-value">${formatOhms(task.ohms)}</div><div class="prompt-tolerance">Tolerance ±${prettyTolerance(task.tolerance)}%</div>` : ""}
+            <div class="resistor-scene" id="resistorScene">${resistorSvg(task, false)}</div>
+            <p class="resistor-caption">${task.type === "value" ? "Read the bands from left to right" : state.settings.noTolerance ? "Choose the first three colors; the gold 5% band is fixed" : "Click a band, then choose its color from the radial palette"}</p>
+            ${task.type === "value" ? `<div class="answer-row">
+                <div class="answer-field"><label for="valueAnswer">Resistance</label><input class="answer-input" id="valueAnswer" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 4.7 kΩ" aria-label="Resistance value"></div>
+                ${state.settings.noTolerance
+                  ? `<div class="answer-field"><label for="toleranceAnswer">Tolerance (%)</label><input class="answer-input" id="toleranceAnswer" type="text" value="5" aria-label="Fixed tolerance of 5 percent" readonly></div>`
+                  : `<div class="answer-field"><label for="toleranceAnswer">Tolerance (%)</label><input class="answer-input" id="toleranceAnswer" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 5" aria-label="Tolerance in percent"></div>`}
+              </div><p class="unit-hint" style="width:min(480px,100%);margin:8px auto 0">Use a dot or comma for decimals. Prefixes: k, M, G, m, u/µ, n.</p>` : ""}
+            <div class="feedback" id="feedback" role="status"></div>
+            <div class="submit-row"><button class="primary-button" id="checkButton" type="button">${task.type === "value" ? "Check answer" : "Check colors"}</button></div>
+          </section>
+          ${state.target === Infinity ? `<section class="card graph-card"><div class="graph-heading"><strong>Recent practice</strong><span>Accuracy and time · last 20 questions</span></div><div id="graphMount"></div></section>` : ""}
+        `;
+        document.getElementById("checkButton").onclick = () => submitCurrent(false);
+        document.getElementById("finishRoundButton")?.addEventListener("click", finishRound);
+        if (task.type === "value") {
+          const valueInput = document.getElementById("valueAnswer");
+          const toleranceInput = document.getElementById("toleranceAnswer");
+          valueInput.addEventListener("input", () => valueInput.classList.remove("invalid"));
+          valueInput.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); submitCurrent(false); } });
+          toleranceInput?.addEventListener("input", () => { if (!toleranceInput.readOnly) toleranceInput.classList.remove("invalid"); });
+          toleranceInput?.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); submitCurrent(false); } });
+          if (toleranceInput) {
+            valueInput.addEventListener("keydown", e => { if (e.key === "Tab" && !e.shiftKey) { e.preventDefault(); toleranceInput.focus(); } });
+            toleranceInput.addEventListener("keydown", e => { if (e.key === "Tab" && e.shiftKey) { e.preventDefault(); valueInput.focus(); } });
+          }
+        } else {
+          document.querySelectorAll(".band-hit:not(.band-fixed)").forEach(el => {
+            el.addEventListener("click", () => openRadialMenu(Number(el.dataset.band), el));
+            el.addEventListener("keydown", e => { if (e.key === " ") { e.preventDefault(); openRadialMenu(Number(el.dataset.band), el); } });
+          });
+          document.querySelector('.band-hit[data-band="0"]')?.focus({ preventScroll: true });
+        }
+        if (state.settings.time > 0) startTimer();
+        if (state.target === Infinity) renderLiveGraph();
+        if (task.type === "value") document.getElementById("valueAnswer").focus({ preventScroll: true });
+      }
+      function handleExerciseEnter(event) {
+        if (event.key !== "Enter" || event.defaultPrevented || state.screen !== "practice" || radialMenu.classList.contains("open")) return;
+        if (event.target instanceof Element && event.target.closest("button, input, select, textarea, a")) return;
+        event.preventDefault();
+        if (document.getElementById("feedback")?.classList.contains("show")) {
+          state.index++;
+          renderPractice();
+        } else submitCurrent(false);
+      }
+
+      function openRadialMenu(band, anchor) {
+        if (state.screen !== "practice") return;
+        state.activeBand = band;
+        const rect = anchor.getBoundingClientRect();
+        const x = clamp(rect.left + rect.width / 2, 125, window.innerWidth - 125);
+        const y = clamp(rect.top + rect.height / 2, 125, window.innerHeight - 125);
+        radialMenu.style.left = `${x}px`;
+        radialMenu.style.top = `${y}px`;
+        radialMenu.querySelectorAll(".color-choice").forEach(button => button.remove());
+        const choices = band === 3 ? TOLERANCES : band === 2 ? COLORS : COLORS.filter(color => color.value >= 0);
+        choices.forEach((color, index) => {
+          const angle = -Math.PI / 2 + index / choices.length * Math.PI * 2;
+          const radius = choices.length > 9 ? 85 : 78;
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "color-choice";
+          button.setAttribute("role", "menuitem");
+          button.setAttribute("aria-label", color.name);
+          button.title = color.name;
+          button.style.left = `${115 + Math.cos(angle) * radius - 15}px`;
+          button.style.top = `${115 + Math.sin(angle) * radius - 15}px`;
+          button.style.background = color.hex;
+          button.innerHTML = `<span>${esc(color.name)}</span>`;
+          button.addEventListener("click", () => {
+            state.tasks[state.index].answers[band] = band === 3 ? color.value : color.value;
+            closeRadialMenu();
+            updateResistor();
+            const nextEmpty = state.tasks[state.index].answers.findIndex(answer => answer === null);
+            if (nextEmpty >= 0) document.querySelector(`.band-hit[data-band="${nextEmpty}"]`)?.focus();
+          });
+          radialMenu.appendChild(button);
+        });
+        radialMenu.classList.add("open");
+        radialMenu.querySelector(".color-choice")?.focus();
+      }
+      function closeRadialMenu() { radialMenu.classList.remove("open"); }
+      document.getElementById("radialClose").addEventListener("click", closeRadialMenu);
+      document.addEventListener("keydown", e => { if (e.key === "Escape") closeRadialMenu(); });
+      document.addEventListener("click", e => { if (radialMenu.classList.contains("open") && !radialMenu.contains(e.target) && !e.target.closest(".band-hit")) closeRadialMenu(); });
+      function updateResistor() {
+        const scene = document.getElementById("resistorScene");
+        if (!scene) return;
+        const task = state.tasks[state.index];
+        scene.innerHTML = resistorSvg(task, false);
+        scene.querySelectorAll(".band-hit:not(.band-fixed)").forEach(el => {
+          el.addEventListener("click", () => openRadialMenu(Number(el.dataset.band), el));
+          el.addEventListener("keydown", e => { if (e.key === " ") { e.preventDefault(); openRadialMenu(Number(el.dataset.band), el); } });
+        });
+      }
+      function parseResistance(input) {
+        const text = String(input).trim().replace(/Ω|ohms?/gi, "").replace(/\s+/g, "");
+        const match = text.match(/^([+-]?(?:\d+(?:[.,]\d*)?|[.,]\d+))(G|M|k|K|m|u|µ|μ|n)?$/);
+        if (!match) return NaN;
+        const number = Number(match[1].replace(",", "."));
+        const prefix = match[2] || "";
+        const powers = { G: 9, M: 6, k: 3, K: 3, m: -3, u: -6, "µ": -6, "μ": -6, n: -9 };
+        const multiplier = prefix ? Math.pow(10, powers[prefix]) : 1;
+        return number * multiplier;
+      }
+      function correctCodeMarkup(task) {
+        const colors = task.colors.slice(0, state.settings.noTolerance ? 3 : 4);
+        const dots = task.colors.map((value, index) => {
+          const color = index === 3 ? toleranceByValue(Number(value)) : colorByValue(Number(value));
+          return `<span class="feedback-color" aria-label="Band ${index + 1}: ${esc(color.name)}"><span class="feedback-color-dot" style="background:${color.hex}"></span><span>${esc(color.name)}</span></span>`;
+        }).join("");
+        return `<div class="feedback-colors" aria-label="Correct band colors">${dots}</div>`;
+      }
+      function submitCurrent(timedOut) {
+        if (state.screen !== "practice") return;
+        closeRadialMenu();
+        const task = state.tasks[state.index];
+        let correct = false;
+        let response = "";
+        if (task.type === "value") {
+          const valueField = document.getElementById("valueAnswer");
+          const toleranceField = document.getElementById("toleranceAnswer");
+          const missingValue = !valueField.value.trim();
+          const missingTolerance = !state.settings.noTolerance && !toleranceField.value.trim();
+          valueField.classList.toggle("invalid", missingValue);
+          toleranceField?.classList.toggle("invalid", missingTolerance);
+          if (!timedOut && (missingValue || missingTolerance)) {
+            const feedback = document.getElementById("feedback");
+            feedback.className = "feedback show incorrect";
+            feedback.textContent = missingValue && missingTolerance ? "Enter a resistance and tolerance before checking." : missingValue ? "Enter a resistance before checking." : "Enter a tolerance before checking.";
+            (missingValue ? valueField : toleranceField).focus();
+            return;
+          }
+          const enteredValue = parseResistance(valueField.value);
+          const enteredTolerance = state.settings.noTolerance ? task.tolerance : Number(String(toleranceField.value).replace(",", ".").replace("%", "").trim());
+          correct = Number.isFinite(enteredValue) && Math.abs(enteredValue - task.ohms) < Math.max(1e-10, task.ohms * 1e-8)
+            && (state.settings.noTolerance || (Number.isFinite(enteredTolerance) && Math.abs(enteredTolerance - task.tolerance) < 1e-8));
+          response = state.settings.noTolerance ? valueField.value.trim() || "—" : `${valueField.value.trim() || "—"} ±${toleranceField.value.trim() || "—"}%`;
+        } else {
+          const requiredBands = state.settings.noTolerance ? 3 : 4;
+          const missingBand = task.answers.slice(0, requiredBands).findIndex(answer => answer === null);
+          if (!timedOut && missingBand >= 0) {
+            const feedback = document.getElementById("feedback");
+            feedback.className = "feedback show incorrect";
+            feedback.textContent = "Choose a color for each band before checking.";
+            const scene = document.getElementById("resistorScene");
+            scene.querySelectorAll(".band-hit").forEach((band, index) => band.classList.toggle("band-missing", index < requiredBands && task.answers[index] === null));
+            document.querySelector(`.band-hit[data-band="${missingBand}"]`)?.focus();
+            return;
+          }
+          correct = task.answers.slice(0, requiredBands).every((answer, i) => Number(answer) === Number(task.colors[i]));
+          response = task.answers.slice(0, requiredBands).map((value, index) => {
+            if (value === null) return "—";
+            return index === 3 ? toleranceByValue(Number(value))?.name : colorByValue(Number(value))?.name;
+          }).join(" · ");
+        }
+        task.correct = correct;
+        task.elapsed = Math.max(0, (performance.now() - state.startedAt) / 1000);
+        task.timedOut = timedOut;
+        task.response = response;
+        clearTimer();
+        const feedback = document.getElementById("feedback");
+        feedback.className = `feedback show ${correct ? "correct" : "incorrect"}`;
+        const expected = task.type === "value"
+          ? `${formatOhms(task.ohms)}${state.settings.noTolerance ? "" : ` ±${prettyTolerance(task.tolerance)}%`}`
+          : state.settings.noTolerance
+            ? task.colors.slice(0, 3).map(value => colorByValue(Number(value)).name).join(" · ")
+            : task.colors.map((value, index) => index === 3 ? toleranceByValue(Number(value)).name : colorByValue(Number(value)).name).join(" · ");
+        feedback.innerHTML = `<strong>${timedOut ? "Time is up." : correct ? "Correct — nicely done." : "Not quite."}</strong>${correct ? `Answer: ${esc(expected)}` : task.type === "code" ? `Correct band colors:${correctCodeMarkup(task)}` : `Correct answer: ${esc(expected)}`}`;
+        document.getElementById("checkButton").textContent = state.target !== Infinity && state.index === state.target - 1 ? "Check results" : "Next";
+        document.getElementById("checkButton").onclick = () => { state.index++; renderPractice(); };
+        document.getElementById("checkButton").focus();
+        if (state.target === Infinity) renderLiveGraph();
+      }
+      function startTimer() {
+        const limit = state.settings.time;
+        const started = performance.now();
+        const update = () => {
+          const elapsed = (performance.now() - started) / 1000;
+          const left = Math.max(0, limit - elapsed);
+          const timer = document.getElementById("timer");
+          if (!timer || state.screen !== "practice") { clearTimer(); return; }
+          timer.textContent = `${Math.ceil(left)}s`;
+          if (left <= 5) timer.classList.add("warning");
+          if (left <= 0) { clearTimer(); submitCurrent(true); }
+        };
+        update();
+        state.timerId = window.setInterval(update, 100);
+      }
+      function clearTimer() { if (state.timerId) window.clearInterval(state.timerId); state.timerId = null; }
+
+      function drawGraph(canvas, tasks) {
+        const ctx = canvas.getContext("2d");
+        const ratio = window.devicePixelRatio || 1;
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        canvas.width = width * ratio;
+        canvas.height = height * ratio;
+        ctx.scale(ratio, ratio);
+        ctx.clearRect(0, 0, width, height);
+        const data = tasks.slice(-20);
+        if (!data.length) return;
+        const left = 24, right = 10, top = 12, bottom = 24;
+        const chartW = width - left - right, chartH = height - top - bottom;
+        ctx.strokeStyle = "#ebe6dd";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 2; i++) {
+          const y = top + chartH * i / 2;
+          ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(width - right, y); ctx.stroke();
+        }
+        ctx.font = "10px system-ui"; ctx.fillStyle = "#8a8635"; ctx.textAlign = "right";
+        ctx.fillText("100%", left - 5, top + 4); ctx.fillText("0%", left - 5, top + chartH + 3);
+        const maxTime = Math.max(5, ...data.map(task => task.elapsed || 0));
+        const step = data.length > 1 ? chartW / (data.length - 1) : 0;
+        ctx.beginPath();
+        data.forEach((task, i) => {
+          const x = left + i * step;
+          const y = top + chartH * (1 - (task.correct ? 1 : 0));
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = "#8a8635"; ctx.lineWidth = 2; ctx.stroke();
+        data.forEach((task, i) => {
+          const x = left + i * step, y = top + chartH * (task.correct ? 0 : 1);
+          ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = task.correct ? "#8a8635" : "#b64d35"; ctx.fill();
+          const barH = chartH * Math.min(1, (task.elapsed || 0) / maxTime);
+          ctx.fillStyle = "rgba(208,98,36,.22)";
+          ctx.fillRect(x - Math.max(2, step * .2), top + chartH - barH, Math.max(4, step * .4), barH);
+        });
+        ctx.textAlign = "left"; ctx.fillStyle = "#77736a";
+        ctx.fillText(`0s`, left, height - 5); ctx.textAlign = "right"; ctx.fillText(`${trim(maxTime)}s`, width - right, height - 5);
+      }
+      function renderLiveGraph() {
+        const mount = document.getElementById("graphMount");
+        if (!mount) return;
+        const done = state.tasks.filter(task => task.response !== undefined);
+        mount.innerHTML = done.length ? `<canvas class="live-graph" aria-label="Accuracy and time graph"></canvas>` : `<div class="graph-empty">Your accuracy and response time will appear here.</div>`;
+        const canvas = mount.querySelector("canvas");
+        if (canvas) drawGraph(canvas, done);
+      }
+
+      function finishRound() {
+        clearTimer();
+        state.tasks = state.tasks.filter(task => task.response !== undefined);
+        state.screen = "results";
+        const completed = state.tasks;
+        const correct = completed.filter(task => task.correct).length;
+        const average = completed.length ? completed.reduce((sum, task) => sum + task.elapsed, 0) / completed.length : 0;
+        state.currentRound = { id: Date.now(), date: new Date().toISOString(), mode: state.correction ? "Error correction" : state.settings.mode, series: state.settings.series || "none", noTolerance: Boolean(state.settings.noTolerance), total: completed.length, correct, average, tasks: completed.map(task => ({ ...task, answers: task.answers ? [...task.answers] : null })) };
+        saved.rounds.unshift(state.currentRound);
+        saved.rounds = saved.rounds.slice(0, 100);
+        persist();
+        renderResults();
+      }
+      function renderDistribution(tasks) {
+        const max = Math.max(1, ...tasks.map(task => task.elapsed));
+        const bins = Array.from({ length: 8 }, () => 0);
+        tasks.forEach(task => { const idx = Math.min(7, Math.floor((task.elapsed / max) * 7.999)); bins[idx]++; });
+        return bins.map((count, i) => {
+          const height = count ? Math.max(4, count / Math.max(...bins) * 115) : 0;
+          const lo = max * i / 8, hi = max * (i + 1) / 8;
+          return `<div class="dist-column"><div class="dist-bar" style="height:${height}px" data-count="${count}"><span class="dist-label">${trim(lo)}–${trim(hi)}s</span></div></div>`;
+        }).join("");
+      }
+      function renderTaskRows() {
+        const round = state.currentRound;
+        const tasks = state.onlyErrors ? round.tasks.filter(task => !task.correct) : round.tasks;
+        const list = document.getElementById("taskList");
+        if (!tasks.length) { list.innerHTML = `<div class="history-empty">No errors in this round. Great work!</div>`; return; }
+        list.innerHTML = tasks.map((task) => {
+          const originalIndex = round.tasks.indexOf(task);
+          const expected = task.type === "value"
+            ? `${formatOhms(task.ohms)}${round.noTolerance ? "" : ` ±${prettyTolerance(task.tolerance)}%`}`
+            : `${formatOhms(task.ohms)}${round.noTolerance ? "" : ` ±${prettyTolerance(task.tolerance)}%`} · ${task.colors.slice(0, round.noTolerance ? 3 : 4).map((v, i) => i === 3 ? toleranceByValue(Number(v)).name : colorByValue(Number(v)).name).join(" / ")}`;
+          const response = task.response || "No answer";
+          return `<div class="task-row"><span class="task-index">${String(originalIndex + 1).padStart(2, "0")}</span><div class="task-main"><strong>${esc(modeLabel(task.type))}: ${esc(expected)}</strong><span>Your answer: ${esc(response)} · ${trim(task.elapsed)}s${task.timedOut ? " · timed out" : ""}</span></div><span class="task-result ${task.correct ? "good" : "bad"}">${task.correct ? "Correct" : "Missed"}</span></div>`;
+        }).join("");
+      }
+      function renderResults() {
+        const round = state.currentRound;
+        const percentage = round.total ? Math.round(round.correct / round.total * 100) : 0;
+        app.innerHTML = `
+          <div class="results-header"><div><div class="eyebrow">${state.correction ? "Correction round complete" : "Round complete"}</div><h1>${percentage}% correct</h1><p class="intro" style="margin:0">${round.correct} of ${round.total} questions answered correctly${state.correction ? " in your correction round" : ""}.</p></div><button class="quiet-button" id="homeButton" type="button">← Back to setup</button></div>
+          <div class="summary-grid">
+            <div class="stat-card"><span>Correct answers</span><strong>${round.correct}/${round.total}</strong></div>
+            <div class="stat-card"><span>Accuracy</span><strong>${percentage}%</strong></div>
+            <div class="stat-card"><span>Average time</span><strong>${trim(round.average)}s</strong></div>
+            <div class="stat-card"><span>Round type</span><strong style="font-size:17px">${esc(round.mode === "value" ? "Read code" : round.mode === "code" ? "Place code" : round.mode === "mixed" ? "Mixed" : round.mode)}</strong></div>
+          </div>
+          <div class="results-grid">
+            <section class="card chart-card"><h2>Time distribution</h2><div class="distribution">${renderDistribution(round.tasks)}</div><div class="chart-legend"><span>Questions by response time</span><span>${trim(Math.max(...round.tasks.map(t => t.elapsed), 0))}s max</span></div></section>
+            <section class="card task-list-card"><h2>Question review</h2><div class="list-tools"><span class="field-note">${round.tasks.length} completed</span><label class="toggle-label"><input type="checkbox" id="errorsToggle">Only errors</label></div><div class="task-list" id="taskList"></div></section>
+          </div>
+          <div class="result-actions">
+            ${round.tasks.some(task => !task.correct) ? `<button class="primary-button" id="correctErrorsButton" type="button">Practice missed questions</button>` : ""}
+            <button class="primary-button secondary-button" id="repeatButton" type="button">Run this round again</button>
+            <button class="quiet-button" id="resultsHistoryButton" type="button">Overall statistics</button>
+          </div>`;
+        renderTaskRows();
+        document.getElementById("homeButton").addEventListener("click", renderSetup);
+        document.getElementById("errorsToggle").addEventListener("change", event => { state.onlyErrors = event.target.checked; renderTaskRows(); });
+        document.getElementById("repeatButton").addEventListener("click", () => {
+          state.correction = false;
+          state.onlyErrors = false;
+          state.tasks = [];
+          state.valuePool = [];
+          state.target = state.settings.rolls;
+          state.mixType = null;
+          state.mixRemaining = 0;
+          state.index = 0;
+          renderPractice();
+        });
+        document.getElementById("correctErrorsButton")?.addEventListener("click", startCorrection);
+        document.getElementById("resultsHistoryButton").addEventListener("click", openHistory);
+      }
+      function startCorrection() {
+        const missed = state.currentRound.tasks.filter(task => !task.correct);
+        if (!missed.length) return;
+        state.tasks = missed.map(task => ({ ...task, type: task.type, answers: task.type === "code" ? [null, null, null, state.currentRound.noTolerance ? 5 : null] : null, correct: false, elapsed: 0, timedOut: false, response: undefined }));
+        state.target = state.tasks.length;
+        state.index = 0;
+        state.correction = true;
+        state.settings = { rolls: state.tasks.length, time: state.settings.time, mode: "mixed", series: state.currentRound.series || "none", noTolerance: Boolean(state.currentRound.noTolerance) };
+        renderPractice();
+      }
+
+      function openHistory() {
+        renderHistory();
+        historyOverlay.classList.add("open");
+        document.getElementById("closeHistory").focus();
+      }
+      function closeHistory() { historyOverlay.classList.remove("open"); document.getElementById("historyButton").focus(); }
+      document.getElementById("historyButton").addEventListener("click", openHistory);
+      document.getElementById("closeHistory").addEventListener("click", closeHistory);
+      historyOverlay.addEventListener("click", event => { if (event.target === historyOverlay) closeHistory(); });
+      function renderHistory() {
+        const content = document.getElementById("historyContent");
+        const rounds = saved.rounds;
+        if (!rounds.length) {
+          content.innerHTML = `<div class="history-empty">No completed rounds yet.<br>Finish a practice round and your progress will be saved here.</div>`;
+          return;
+        }
+        const allTotal = rounds.reduce((sum, round) => sum + round.total, 0);
+        const allCorrect = rounds.reduce((sum, round) => sum + round.correct, 0);
+        const allAvg = allTotal ? rounds.reduce((sum, round) => sum + round.average * round.total, 0) / allTotal : 0;
+        content.innerHTML = `<div class="history-total"><div><span>Rounds</span><strong>${rounds.length}</strong></div><div><span>Overall accuracy</span><strong>${allTotal ? Math.round(allCorrect / allTotal * 100) : 0}%</strong></div><div><span>Avg. response</span><strong>${trim(allAvg)}s</strong></div></div>
+          <div>${rounds.map(round => `<div class="history-entry"><div><strong>${esc(round.mode === "value" ? "Value by code" : round.mode === "code" ? "Code by value" : round.mode === "mixed" ? "Mixed practice" : round.mode)} · ${round.correct}/${round.total}</strong><small>${new Date(round.date).toLocaleString()} · ${round.total ? Math.round(round.correct / round.total * 100) : 0}% accuracy</small></div><span class="task-result ${round.correct === round.total ? "good" : "bad"}">${trim(round.average)}s avg</span></div>`).join("")}</div>
+          <div style="text-align:right;margin-top:14px"><button class="quiet-button" id="clearHistory" type="button">Clear history</button></div>`;
+        document.getElementById("clearHistory").addEventListener("click", () => {
+          if (!window.confirm("Clear all saved practice history from this device?")) return;
+          saved.rounds = [];
+          persist();
+          renderHistory();
+        });
+      }
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.remove("show"), 2400);
+      }
+
+      window.addEventListener("resize", () => {
+        if (state.screen === "practice" && state.target === Infinity) renderLiveGraph();
+      });
+      document.getElementById("homeLink").addEventListener("click", event => {
+        event.preventDefault();
+        closeHistory();
+        renderSetup();
+      });
+      document.addEventListener("keydown", handleExerciseEnter);
+      renderSetup();
+    })();
+  </script>
+</body>
+</html>
