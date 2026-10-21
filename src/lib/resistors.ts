@@ -109,6 +109,53 @@ export function makeQuestion(type: TaskType, settings: Settings, value: { digits
   };
 }
 
+const SMD_TOLERANCES = [
+  { tolerance: 1, code: "F" },
+  { tolerance: 2, code: "G" },
+  { tolerance: 5, code: "J" },
+  { tolerance: 10, code: "K" },
+  { tolerance: 20, code: "M" },
+];
+
+export function makeSmdQuestion(type: TaskType, settings: Settings): ResistorTask {
+  const series: ESeries = settings.series === "E24" || settings.series === "E48" || settings.series === "E96"
+    ? settings.series
+    : (["E24", "E48", "E96"] as const)[Math.floor(Math.random() * 3)];
+  const digitCount = Math.random() < 0.5 ? 3 : 4;
+  const significantDigits = digitCount - 1;
+  const count = SERIES_COUNTS[series];
+  const standardValues = series === "E24"
+    ? seriesDigits("E24").map((digits) => digits / 10)
+    : Array.from({ length: count }, (_, index) => Number(Math.pow(10, index / count).toPrecision(3)));
+  const significand = Math.round(standardValues[Math.floor(Math.random() * standardValues.length)] * 10 ** (significantDigits - 1));
+  const multiplier = Math.floor(Math.random() * 10);
+  const smdCode = `${String(significand).padStart(significantDigits, "0")}${multiplier}`;
+  const ohms = significand * 10 ** multiplier;
+  const includeTolerance = !settings.noToleranceLetter && Math.random() < 0.5;
+  const standardTolerance = digitCount === 3 ? 5 : 1;
+  const tolerance = includeTolerance
+    ? SMD_TOLERANCES[Math.floor(Math.random() * SMD_TOLERANCES.length)]
+    : SMD_TOLERANCES.find((option) => option.tolerance === standardTolerance)!;
+  const digits = String(significand).padStart(2, "0");
+  const first = Number(digits[0]);
+  const second = Number(digits[1]);
+
+  return {
+    type,
+    digits: [first, second],
+    multiplier,
+    tolerance: tolerance.tolerance,
+    colors: [first, second, multiplier, 5],
+    ohms,
+    answers: [],
+    correct: false,
+    elapsed: 0,
+    timedOut: false,
+    smdCode,
+    smdToleranceCode: includeTolerance ? tolerance.code : null,
+  };
+}
+
 export function shuffle<T>(items: T[]): T[] {
   const result = [...items];
   for (let index = result.length - 1; index > 0; index--) {

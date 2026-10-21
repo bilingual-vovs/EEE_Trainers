@@ -2,16 +2,21 @@ export type ExerciseMode = "value" | "code" | "mixed";
 export type TaskType = Exclude<ExerciseMode, "mixed">;
 export type ESeries = "none" | "E3" | "E6" | "E12" | "E24" | "E48" | "E96" | "E192";
 export type Screen = "setup" | "practice" | "results";
+export type ExerciseKind = "axial" | "smd";
 
 export interface Settings {
+  exercise?: ExerciseKind;
   rolls: number;
   time: number;
   mode: ExerciseMode;
   series: ESeries;
   noTolerance: boolean;
+  noToleranceLetter: boolean;
 }
 
 export interface ResistorTask {
+  smdCode?: string;
+  smdToleranceCode?: string | null;
   type: TaskType;
   digits: [number, number];
   multiplier: number;
@@ -26,11 +31,13 @@ export interface ResistorTask {
 }
 
 export interface Round {
+  exercise?: ExerciseKind;
   id: number;
   date: string;
   mode: ExerciseMode | "Error correction";
   series: ESeries;
   noTolerance: boolean;
+  noToleranceLetter?: boolean;
   total: number;
   correct: number;
   average: number;

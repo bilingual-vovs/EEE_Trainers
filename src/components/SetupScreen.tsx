@@ -5,19 +5,21 @@ import { SERIES_OPTIONS, formatDuration, trim } from "../lib/resistors";
 import { Card, Button } from "./Shared";
 
 interface SetupScreenProps {
+  exercise: NonNullable<Settings["exercise"]>;
   rounds: Round[];
   onStart: (settings: Settings) => void;
 }
 
 const DEFAULT_TIME = 99;
 
-export function SetupScreen({ rounds, onStart }: SetupScreenProps) {
+export function SetupScreen({ exercise, rounds, onStart }: SetupScreenProps) {
   const [rollsText, setRollsText] = useState("10");
   const [timeText, setTimeText] = useState("No time limit");
   const [timePosition, setTimePosition] = useState(DEFAULT_TIME);
   const [mode, setMode] = useState<ExerciseMode>("mixed");
   const [series, setSeries] = useState<ESeries>("none");
-  const [noTolerance, setNoTolerance] = useState(false);
+  const [noTolerance, setNoTolerance] = useState(exercise === "smd");
+  const [noToleranceLetter, setNoToleranceLetter] = useState(false);
   const [error, setError] = useState("");
 
   const estimate = useMemo(() => {
@@ -25,6 +27,7 @@ export function SetupScreen({ rounds, onStart }: SetupScreenProps) {
     const seconds = Number(timeText);
     const times = rounds.flatMap((round) => round.tasks
       .filter((task) => task.elapsed > 0 && !task.timedOut
+        && (round.exercise ?? "axial") === exercise
         && (series === "none" || round.series === series)
         && (mode === "mixed" || task.type === mode))
       .map((task) => task.elapsed));
@@ -68,7 +71,7 @@ export function SetupScreen({ rounds, onStart }: SetupScreenProps) {
       return;
     }
     setError("");
-    onStart({ rolls: count, time, mode, series, noTolerance });
+    onStart({ exercise, rolls: count, time, mode, series, noTolerance, noToleranceLetter });
   }
 
   function updateTimeText(value: string) {
@@ -88,8 +91,8 @@ export function SetupScreen({ rounds, onStart }: SetupScreenProps) {
   return (
     <>
       <div className="eyebrow">Learn the language of resistors</div>
-      <h1>Read the bands.<br/>Know the value.</h1>
-      <p className="intro">Build confidence with four-band resistor codes. Practice reading values, placing colors, or switch between both.</p>
+      <h1>{exercise === "smd" ? <>Read the marking.<br/>Know the value.</> : <>Read the bands.<br/>Know the value.</>}</h1>
+      <p className="intro">{exercise === "smd" ? "Build confidence reading SMD resistor markings. Practice decoding a marking, writing the code for a value, or switch between both." : "Build confidence with four-band resistor codes. Practice reading values, placing colors, or switch between both."}</p>
       <div className="setup-grid">
         <Card className="setup-card" aria-labelledby="setupTitle">
           <div className="card-title"><h2 id="setupTitle">Set up your practice</h2><span className="estimate-chip" aria-live="polite"><strong>{estimate.label}</strong>{estimate.source}</span></div>
@@ -116,16 +119,19 @@ export function SetupScreen({ rounds, onStart }: SetupScreenProps) {
               </div>
             </div>
             <div className="field">
-              <div className="field-head"><label htmlFor="seriesSelect">Preferred value series</label><span className="field-note">Four-band values</span></div>
-              <div className="select-wrap"><select id="seriesSelect" value={series} onChange={(event) => setSeries(event.currentTarget.value as ESeries)} aria-label="Preferred E series">{SERIES_OPTIONS.map((option) => <option key={option} value={option}>{option === "none" ? "No set — all values" : option}</option>)}</select></div>
-              <div className="field-note" style={{ marginTop: 6 }}>Four-band values use two significant digits; E-series values are rounded to the nearest representable value.</div>
+              <div className="field-head"><label htmlFor="seriesSelect">Preferred value series</label><span className="field-note">{exercise === "smd" ? "SMD markings" : "Four-band values"}</span></div>
+              <div className="select-wrap"><select id="seriesSelect" value={series} onChange={(event) => setSeries(event.currentTarget.value as ESeries)} aria-label="Preferred E series">{(exercise === "smd" ? ["none", "E24", "E48", "E96"] : SERIES_OPTIONS).map((option) => <option key={option} value={option}>{option === "none" ? (exercise === "smd" ? "ALL" : "No set — all values") : option}</option>)}</select></div>
+              <div className="field-note" style={{ marginTop: 6 }}>{exercise === "smd" ? "ALL mixes E24, E48, and E96 values; markings use 3 or 4 numeric digits." : "Four-band values use two significant digits; E-series values are rounded to the nearest representable value."}</div>
             </div>
-            <div className="field"><label className="toggle-label"><input type="checkbox" checked={noTolerance} onChange={(event) => setNoTolerance(event.currentTarget.checked)}/>No tolerance (practice the first three bands only)</label></div>
+            <div className="field">
+              <label className="toggle-label"><input type="checkbox" checked={noTolerance} onChange={(event) => setNoTolerance(event.currentTarget.checked)}/>{exercise === "smd" ? "Skip tolerance answer (show reference)" : "No tolerance (practice the first three bands only)"}</label>
+              {exercise === "smd" && <label className="toggle-label"><input type="checkbox" checked={noToleranceLetter} onChange={(event) => setNoToleranceLetter(event.currentTarget.checked)}/>No letter tolerance (5% for 3 digits, 1% for 4)</label>}
+            </div>
             <div className="field">
               <div className="field-head"><span className="field-label">Exercise type</span></div>
               <div className="mode-options">
-                <ModeOption value="value" selected={mode} onSelect={setMode} title="Value by code" detail="Read the colors and enter the resistance"/>
-                <ModeOption value="code" selected={mode} onSelect={setMode} title="Code by value" detail="Choose the right color for each band"/>
+                <ModeOption value="value" selected={mode} onSelect={setMode} title="Value by code" detail={exercise === "smd" ? "Read the marking and enter the resistance" : "Read the colors and enter the resistance"}/>
+                <ModeOption value="code" selected={mode} onSelect={setMode} title="Code by value" detail={exercise === "smd" ? "Enter the correct SMD marking" : "Choose the right color for each band"}/>
                 <ModeOption value="mixed" selected={mode} onSelect={setMode} title="Mixed" detail="Switch modes in clusters of at least two"/>
               </div>
             </div>
@@ -134,7 +140,7 @@ export function SetupScreen({ rounds, onStart }: SetupScreenProps) {
           </form>
         </Card>
         <aside className="card info-card">
-          <div><div className="eyebrow">Quick reference</div><h2>Two digits. One multiplier. One tolerance.</h2><p>Each band adds a piece of the resistance value. Learn the color sequence as you practice.</p></div>
+          <div><div className="eyebrow">Quick reference</div><h2>{exercise === "smd" ? "Digits. Multiplier. Tolerance." : "Two digits. One multiplier. One tolerance."}</h2><p>{exercise === "smd" ? "SMD numeric markings encode significant digits and a power-of-ten multiplier. A trailing letter can indicate tolerance." : "Each band adds a piece of the resistance value. Learn the color sequence as you practice."}</p></div>
           <div className="legend">{[
             ["#252522", "0 · Black"], ["#795038", "1 · Brown"], ["#c44738", "2 · Red"], ["#e06b1b", "3 · Orange"],
             ["#f2c84b", "4 · Yellow"], ["#64814a", "5 · Green"], ["#477ba0", "6 · Blue"], ["#82649b", "7 · Violet"],

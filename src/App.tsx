@@ -1,13 +1,14 @@
 import { useRef, useState } from "react";
-import type { ResistorTask, Round, Settings, TaskType } from "./types";
-import { makeQuestion, seriesDigits, shuffle } from "./lib/resistors";
+import type { ExerciseKind, ResistorTask, Round, Settings, TaskType } from "./types";
+import { makeQuestion, makeSmdQuestion, seriesDigits, shuffle } from "./lib/resistors";
 import { readRounds, writeRounds } from "./lib/storage";
 import { HistoryDialog, Header, Footer } from "./components/Shared";
 import { SetupScreen } from "./components/SetupScreen";
 import { PracticeScreen } from "./components/PracticeScreen";
 import { ResultsScreen } from "./components/ResultsScreen";
+import { SmdPracticeScreen } from "./components/SmdPracticeScreen";
 
-const EMPTY_SETTINGS: Settings = { rolls: 10, time: 0, mode: "mixed", series: "none", noTolerance: false };
+const EMPTY_SETTINGS: Settings = { exercise: "axial", rolls: 10, time: 0, mode: "mixed", series: "none", noTolerance: false, noToleranceLetter: false };
 
 function createQuestionGenerator(settings: Settings) {
   const valueDeck = shuffle(seriesDigits(settings.series).flatMap((digits) =>
@@ -40,11 +41,12 @@ function createQuestionGenerator(settings: Settings) {
     const value = valueDeck[valueIndex % valueDeck.length];
     valueIndex++;
     created++;
-    return makeQuestion(type, settings, value);
+    return settings.exercise === "smd" ? makeSmdQuestion(type, settings) : makeQuestion(type, settings, value);
   };
 }
 
 export default function App() {
+  const [exercise, setExercise] = useState<ExerciseKind>("axial");
   const [screen, setScreen] = useState<"setup" | "practice" | "results">("setup");
   const [rounds, setRounds] = useState<Round[]>(() => readRounds());
   const [settings, setSettings] = useState<Settings>(EMPTY_SETTINGS);
@@ -71,6 +73,8 @@ export default function App() {
   }
 
   function beginRound(nextSettings: Settings, correctionTasks?: ResistorTask[]) {
+    nextSettings = { ...nextSettings, exercise: nextSettings.exercise ?? exercise };
+    setExercise(nextSettings.exercise ?? "axial");
     setSettings(nextSettings);
     setCorrection(Boolean(correctionTasks));
     setRoundResult(null);
@@ -105,8 +109,10 @@ export default function App() {
       id: Date.now(),
       date: new Date().toISOString(),
       mode: correction ? "Error correction" : settings.mode,
+      exercise: settings.exercise ?? "axial",
       series: settings.series,
       noTolerance: settings.noTolerance,
+      noToleranceLetter: settings.noToleranceLetter,
       total: completed.length,
       correct,
       average,
@@ -123,6 +129,10 @@ export default function App() {
     const target = correction ? tasks.length : settings.rolls;
     if (target !== Infinity && nextIndex >= target) {
       finishRound(tasks);
+      return;
+    }
+    if (correction) {
+      setIndex(nextIndex);
       return;
     }
     const nextTask = generatorRef.current?.(target) ?? task;
@@ -152,8 +162,16 @@ export default function App() {
     <div className="shell">
       <Header onHome={() => { setHistoryOpen(false); setScreen("setup"); }} onHistory={() => setHistoryOpen(true)}/>
       <main id="app" aria-live="polite">
-        {screen === "setup" && <SetupScreen rounds={rounds} onStart={(nextSettings) => beginRound(nextSettings)}/>}
-        {screen === "practice" && task && <PracticeScreen key={index} task={task} index={index} total={settings.rolls} continuous={settings.rolls === Infinity} settings={settings} recentTasks={tasks.filter((item) => item.response !== undefined)} onEvaluate={evaluateCurrent} onNext={nextQuestion} onEnd={() => finishRound(tasks)}/>}
+        {screen === "setup" && <>
+          <div className="exercise-switch" role="group" aria-label="Choose resistor exercise">
+            <button type="button" className={exercise === "axial" ? "selected" : ""} aria-pressed={exercise === "axial"} onClick={() => setExercise("axial")}>Axial resistor codes</button>
+            <button type="button" className={exercise === "smd" ? "selected" : ""} aria-pressed={exercise === "smd"} onClick={() => setExercise("smd")}>SMD resistor values</button>
+          </div>
+          <SetupScreen key={exercise} exercise={exercise} rounds={rounds} onStart={(nextSettings) => beginRound(nextSettings)}/>
+        </>}
+        {screen === "practice" && task && (settings.exercise === "smd"
+          ? <SmdPracticeScreen key={index} task={task} index={index} total={settings.rolls} continuous={settings.rolls === Infinity} settings={settings} recentTasks={tasks.filter((item) => item.response !== undefined)} onEvaluate={evaluateCurrent} onNext={nextQuestion} onEnd={() => finishRound(tasks)}/>
+          : <PracticeScreen key={index} task={task} index={index} total={settings.rolls} continuous={settings.rolls === Infinity} settings={settings} recentTasks={tasks.filter((item) => item.response !== undefined)} onEvaluate={evaluateCurrent} onNext={nextQuestion} onEnd={() => finishRound(tasks)}/>)}
         {screen === "results" && roundResult && <ResultsScreen round={roundResult} correction={correction} onHome={() => setScreen("setup")} onRepeat={repeatRound} onCorrectErrors={practiceErrors} onHistory={() => setHistoryOpen(true)}/>}
       </main>
       <Footer/>

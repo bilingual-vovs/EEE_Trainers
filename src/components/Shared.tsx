@@ -6,11 +6,11 @@ import { COLORS, TOLERANCES, colorByValue, formatOhms, toleranceByValue, trim } 
 export function Header({ onHome, onHistory }: { onHome: () => void; onHistory: () => void }) {
   return (
     <header>
-      <a className="brand" href="#setup" aria-label="Four-band trainer home" onClick={(event) => { event.preventDefault(); onHome(); }}>
+      <a className="brand" href="#setup" aria-label="Resistor trainer home" onClick={(event) => { event.preventDefault(); onHome(); }}>
         <span className="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none"><path d="M2 12h4m12 0h4M6 12l2-4 3 8 3-8 2 4h2" stroke="#8A8635" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 9.3v5.4m3-5.4v5.4" stroke="#D06224" strokeWidth="2"/></svg>
         </span>
-        <span>Four-band trainer</span>
+        <span>Resistor trainer</span>
       </a>
       <div className="header-actions"><button className="quiet-button" type="button" onClick={onHistory}>Round history</button></div>
     </header>
@@ -18,7 +18,7 @@ export function Header({ onHome, onHistory }: { onHome: () => void; onHistory: (
 }
 
 export function Footer() {
-  return <footer>Four-band resistor practice · Progress is saved on this device</footer>;
+  return <footer>Electrical engineering practice · Progress is saved on this device</footer>;
 }
 
 export function Button({ children, variant = "primary", className = "", ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "quiet" }) {
@@ -164,7 +164,7 @@ export function HistoryDialog({ open, rounds, onClose, onClear }: { open: boolea
             <div><span>Avg. response</span><strong>{trim(average)}s</strong></div>
           </div>
           <div>{rounds.map((round) => <div className="history-entry" key={round.id}>
-            <div><strong>{round.mode === "value" ? "Value by code" : round.mode === "code" ? "Code by value" : round.mode === "mixed" ? "Mixed practice" : round.mode} · {round.correct}/{round.total}</strong><small>{new Date(round.date).toLocaleString()} · {round.total ? Math.round(round.correct / round.total * 100) : 0}% accuracy</small></div>
+            <div><strong>{round.exercise === "smd" ? "SMD · " : "Axial · "}{round.mode === "value" ? "Value by code" : round.mode === "code" ? "Code by value" : round.mode === "mixed" ? "Mixed practice" : round.mode} · {round.correct}/{round.total}</strong><small>{new Date(round.date).toLocaleString()} · {round.total ? Math.round(round.correct / round.total * 100) : 0}% accuracy</small></div>
             <span className={`task-result ${round.correct === round.total ? "good" : "bad"}`}>{trim(round.average)}s avg</span>
           </div>)}</div>
           <div style={{ textAlign: "right", marginTop: 14 }}><Button variant="quiet" onClick={onClear}>Clear history</Button></div>
@@ -175,6 +175,7 @@ export function HistoryDialog({ open, rounds, onClose, onClear }: { open: boolea
 }
 
 export type RoundLike = {
+  exercise?: string;
   id: number;
   date: string;
   mode: string;

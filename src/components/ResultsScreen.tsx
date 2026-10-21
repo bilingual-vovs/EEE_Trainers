@@ -27,7 +27,7 @@ export function ResultsScreen({ round, correction, onHome, onRepeat, onCorrectEr
       <Stat label="Correct answers" value={`${round.correct}/${round.total}`}/>
       <Stat label="Accuracy" value={`${accuracy}%`}/>
       <Stat label="Average time" value={`${trim(round.average)}s`}/>
-      <Stat label="Round type" value={round.mode === "value" ? "Read code" : round.mode === "code" ? "Place code" : round.mode === "mixed" ? "Mixed" : round.mode}/>
+      <Stat label="Round type" value={`${round.exercise === "smd" ? "SMD · " : ""}${round.mode === "value" ? "Read code" : round.mode === "code" ? "Place code" : round.mode === "mixed" ? "Mixed" : round.mode}`}/>
     </div>
     <div className="results-grid">
       <Card className="chart-card"><h2>Time distribution</h2>
@@ -57,7 +57,11 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function TaskRow({ task, round, index }: { task: ResistorTask; round: Round; index: number }) {
-  const expected = task.type === "value"
+  const expected = round.exercise === "smd"
+    ? task.type === "value"
+      ? `${task.smdCode ?? "—"}${task.smdToleranceCode ?? ""} · ${formatOhms(task.ohms)} ±${task.tolerance}%`
+      : `${formatOhms(task.ohms)} ±${task.tolerance}% · ${task.smdCode ?? "—"}${task.smdToleranceCode ?? ""}`
+    : task.type === "value"
     ? `${formatOhms(task.ohms)}${round.noTolerance ? "" : ` ±${task.tolerance}%`}`
     : `${formatOhms(task.ohms)}${round.noTolerance ? "" : ` ±${task.tolerance}%`} · ${task.colors.slice(0, round.noTolerance ? 3 : 4).map((value, band) => (band === 3 ? toleranceByValue(value) : colorByValue(value))?.name).join(" / ")}`;
   return <div className="task-row">
